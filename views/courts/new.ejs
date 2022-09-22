@@ -1,0 +1,70 @@
+<% layout('layouts/boilerplate') %>
+
+
+<div class="row">
+    <h1 class="text-center">Add A New Court</h1>
+    <div class="col-6 offset-3">
+        <form action="/courts" method="POST" class="validated-form" novalidate>
+            <div class="mb-3">
+                <label class="form-label" for="title">Title:</label>
+                <input class="form-control" type="text" id="title" name="court[title]" required>
+                <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide a title.
+                  </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="location">Location:</label>
+                <input class="form-control" type="text" id="location" name="court[location]" required>
+                <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide a location.
+                  </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="website">Website:</label>
+                <input class="form-control" type="text" id="website" name="court[website]" required>
+                <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide a website.
+                  </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="image">Image Url:</label>
+                <input class="form-control" type="text" id="image" name="court[image]" required>
+                <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide an image url.
+                  </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="title">Description:</label>
+                <textarea class="form-control" type="text" id="description" name="court[description]" required></textarea>
+                <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide some description.
+                  </div>
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-success">Add Court</button>
+            </div>
+        </form>
+    
+        <a href="/courts">Back to All Courts</a>
+    </div>
+</div>
+
+
+
+
+    
