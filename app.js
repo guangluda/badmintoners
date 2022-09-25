@@ -3,11 +3,22 @@ const app = express();
 const path = require('path');
 const engine = require('ejs-mate');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const Court = require('./models/court'); //requrie model
+const Review = require('./models/review');//requrie model
 const ExpressError = require('./utils/ExpressError');
 const catchAsync = require('./utils/catchAsync');
-const courtSchema = require('./JoicourtSchema');
+const {courtSchema, reviewSchema} = require('./JoicourtSchema');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const User = require('./models/user');
+
+const courts = require('./routes/courts');
+const reviews = require('./routes/reviews');
+
+
 
 mongoose.connect('mongodb://localhost:27017/badmintonclash');
 
@@ -23,57 +34,44 @@ app.set('views',path.join(__dirname,'views'));
 
 app.use(express.urlencoded({extended:true}));
 app.use(methodOverride('_method'));
+app.use(express.static(path.join(__dirname,'public'))); //tell express to serve our public directory
 
-
-const validateCourt = (req,res,next)=>{
-    const {error} = courtSchema.validate(req.body);
-    if(error){
-        const msg = error.details.map(el=>el.message).join(',');
-        throw new ExpressError(msg,400)
-    } else {
-        next()
+sessionConfig = {
+    secret:'notgood',
+    resave:false,
+    saveUninitialized:true,
+    cookie:{
+        expires:Date.now()+1000*60*60*24*7,
+        maxAge:1000*60*60*24*7
     }
-}
+};
+app.use(session(sessionConfig));
+app.use(flash());
+
+app.use(passport.initialize());
+app.use(passport.session()); //make sure session() is before passport.session()
+passport.use(new LocalStrategy(User.authenticate()));//require User model
+//user local strategy which is required here
+//User.authenticate() User.serializeUser() User.deserializeUser() those methods from user model thanks to passport-local-mongoose
+
+passport.serializeUser(User.serializeUser());  //store in the session
+passport.deserializeUser(User.deserializeUser());  //unstore in the session
+
+app.use((req,res,next)=>{
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    next();
+})
 
 
 app.get('/',(req,res)=>{
     res.render('home')
 });
 
-app.get('/courts', async (req,res)=>{
-    const courts = await Court.find({});
-    res.render('courts/index',{courts});
-})
-app.get('/courts/new',(req,res)=>{  //order matters, need to before :id
-    res.render('courts/new');
-})
-app.post('/courts', validateCourt, catchAsync(async(req,res)=>{
-    const court = new Court(req.body.court);
-    await court.save();
-    res.redirect(`/courts/${court._id}`);
-}))
-app.get('/courts/:id', catchAsync(async (req,res)=>{
-    const {id} =req.params;
-    const court = await Court.findById(id);
-    res.render('courts/show',{court});
-}))
-app.get('/courts/:id/edit',catchAsync(async(req,res)=>{
-    const {id} = req.params;
-    const court = await Court.findById(id);
-    res.render('courts/edit',{court});
-}))
-app.put('/courts/:id', validateCourt, catchAsync(async(req,res)=>{
-    const {id} = req.params;
-    const court = await Court.findByIdAndUpdate(id,{...req.body.court});
-    console.log(req.body)
-    console.log(court)
-    res.redirect(`/courts/${court._id}`);
-}))
-app.delete('/courts/:id',catchAsync(async(req,res)=>{
-    const {id} = req.params;
-    await Court.findByIdAndDelete(id);
-    res.redirect('/courts');
-}))
+app.use('/courts', courts);
+app.use('/courts/:id/reviews', reviews);
+
+
 
 app.all('*',(req,res,next)=>{
     next(new ExpressError('Page not found!',404));
