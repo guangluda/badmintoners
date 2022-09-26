@@ -4,20 +4,12 @@ const router = express.Router({mergeParams:true});
 const Court = require('../models/court'); //requrie model
 const Review = require('../models/review');//requrie model
 
+const {validateReview} = require('../middleware');
+
 const ExpressError = require('../utils/ExpressError');
 const catchAsync = require('../utils/catchAsync');
 const {reviewSchema} = require('../JoicourtSchema');
 
-
-const validateReview = (req,res,next)=>{
-    const {error} = reviewSchema.validate(req.body);
-    if(error){
-        const msg = error.details.map(el=>el.message).join(',');
-        throw new ExpressError(msg,400)
-    } else {
-        next()
-    }
-}
 
 router.post('/', validateReview, catchAsync(async(req,res)=>{
     const court = await Court.findById(req.params.id);

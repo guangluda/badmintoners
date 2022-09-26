@@ -4,20 +4,8 @@ const Court = require('../models/court'); //requrie model
 const ExpressError = require('../utils/ExpressError');
 const catchAsync = require('../utils/catchAsync');
 const {courtSchema} = require('../JoicourtSchema');
-const {isLoggedIn} = require('../middleware');
+const {isLoggedIn, isAuthor, validateCourt} = require('../middleware');
 
-
-
-
-const validateCourt = (req,res,next)=>{
-    const {error} = courtSchema.validate(req.body);
-    if(error){
-        const msg = error.details.map(el=>el.message).join(',');
-        throw new ExpressError(msg,400)
-    } else {
-        next()
-    }
-}
 
 
 router.get('/', async (req,res)=>{
@@ -29,32 +17,34 @@ router.get('/new', isLoggedIn, (req,res)=>{  //order matters, need to before :id
 })
 router.post('/', isLoggedIn, validateCourt, catchAsync(async(req,res)=>{
     const court = new Court(req.body.court);
+    court.author = req.user._id;
     await court.save();
     req.flash('success','Successfully made a new court.')
     res.redirect(`/courts/${court._id}`);
 }))
 router.get('/:id', catchAsync(async (req,res)=>{
     const {id} =req.params;
-    const court = await Court.findById(id).populate('reviews');
+    const court = await Court.findById(id).populate('reviews').populate('author');
+    console.log(court)
     if(!court){
         req.flash('error','Cannot find that court!');
         return res.redirect('/courts');
     }
     res.render('courts/show',{court});
 }))
-router.get('/:id/edit', isLoggedIn, catchAsync(async(req,res)=>{
+router.get('/:id/edit', isLoggedIn, isAuthor, catchAsync(async(req,res)=>{
     const {id} = req.params;
     const court = await Court.findById(id);
     res.render('courts/edit',{court});
 }))
-router.put('/:id', isLoggedIn, validateCourt, catchAsync(async(req,res)=>{
+router.put('/:id', isLoggedIn, isAuthor, validateCourt, catchAsync(async(req,res)=>{
     const {id} = req.params;
     const court = await Court.findByIdAndUpdate(id,{...req.body.court});
     console.log(req.body)
     req.flash('success','Successfully updated the court.')
     res.redirect(`/courts/${court._id}`);
 }))
-router.delete('/:id', isLoggedIn, catchAsync(async(req,res)=>{
+router.delete('/:id', isLoggedIn, isAuthor, catchAsync(async(req,res)=>{
     const {id} = req.params;
     await Court.findByIdAndDelete(id);
     req.flash('success','Successfully deleted court.')
