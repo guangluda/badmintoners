@@ -4,6 +4,7 @@ const Court = require('../models/court'); //requrie model
 const ExpressError = require('../utils/ExpressError');
 const catchAsync = require('../utils/catchAsync');
 const {courtSchema} = require('../JoicourtSchema');
+const {isLoggedIn} = require('../middleware');
 
 
 
@@ -23,10 +24,10 @@ router.get('/', async (req,res)=>{
     const courts = await Court.find({});
     res.render('courts/index',{courts});
 })
-router.get('/new',(req,res)=>{  //order matters, need to before :id
+router.get('/new', isLoggedIn, (req,res)=>{  //order matters, need to before :id
     res.render('courts/new');
 })
-router.post('/', validateCourt, catchAsync(async(req,res)=>{
+router.post('/', isLoggedIn, validateCourt, catchAsync(async(req,res)=>{
     const court = new Court(req.body.court);
     await court.save();
     req.flash('success','Successfully made a new court.')
@@ -41,19 +42,19 @@ router.get('/:id', catchAsync(async (req,res)=>{
     }
     res.render('courts/show',{court});
 }))
-router.get('/:id/edit',catchAsync(async(req,res)=>{
+router.get('/:id/edit', isLoggedIn, catchAsync(async(req,res)=>{
     const {id} = req.params;
     const court = await Court.findById(id);
     res.render('courts/edit',{court});
 }))
-router.put('/:id', validateCourt, catchAsync(async(req,res)=>{
+router.put('/:id', isLoggedIn, validateCourt, catchAsync(async(req,res)=>{
     const {id} = req.params;
     const court = await Court.findByIdAndUpdate(id,{...req.body.court});
     console.log(req.body)
     req.flash('success','Successfully updated the court.')
     res.redirect(`/courts/${court._id}`);
 }))
-router.delete('/:id',catchAsync(async(req,res)=>{
+router.delete('/:id', isLoggedIn, catchAsync(async(req,res)=>{
     const {id} = req.params;
     await Court.findByIdAndDelete(id);
     req.flash('success','Successfully deleted court.')

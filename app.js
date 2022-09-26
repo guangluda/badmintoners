@@ -15,8 +15,9 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user');
 
-const courts = require('./routes/courts');
-const reviews = require('./routes/reviews');
+const courtRoutes = require('./routes/courts');
+const reviewRoutes = require('./routes/reviews');
+const userRoutes = require('./routes/users')
 
 
 
@@ -58,6 +59,11 @@ passport.serializeUser(User.serializeUser());  //store in the session
 passport.deserializeUser(User.deserializeUser());  //unstore in the session
 
 app.use((req,res,next)=>{
+    if(!['/login','/register','/'].includes(req.originalUrl)){
+        req.session.returnTo = req.originalUrl;
+    }
+    // console.log(req.session)
+    res.locals.currentUser = req.user; //from passport
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     next();
@@ -68,8 +74,9 @@ app.get('/',(req,res)=>{
     res.render('home')
 });
 
-app.use('/courts', courts);
-app.use('/courts/:id/reviews', reviews);
+app.use('/courts', courtRoutes);
+app.use('/courts/:id/reviews', reviewRoutes);
+app.use('/',userRoutes);
 
 
 
