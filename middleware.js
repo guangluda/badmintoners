@@ -1,4 +1,5 @@
 const Court = require("./models/court");
+const Review = require('./models/review');//requrie model
 const ExpressError = require('./utils/ExpressError');
 const {courtSchema,reviewSchema} = require('./JoicourtSchema');
 
@@ -15,6 +16,16 @@ module.exports.isAuthor = async(req,res,next)=>{
     const {id} = req.params;
     const court = await Court.findById(id);
     if(!court.author.equals(req.user._id)){
+        req.flash('error','You do not have permission to do that.');
+        return res.redirect(`/courts/${id}`);
+    }
+    next();
+}
+
+module.exports.isReviewAuthor = async(req,res,next)=>{
+    const { id, reviewId } = req.params;
+    const review = await Review.findById(reviewId);
+    if(!review.author.equals(req.user._id)){
         req.flash('error','You do not have permission to do that.');
         return res.redirect(`/courts/${id}`);
     }

@@ -24,8 +24,14 @@ router.post('/', isLoggedIn, validateCourt, catchAsync(async(req,res)=>{
 }))
 router.get('/:id', catchAsync(async (req,res)=>{
     const {id} =req.params;
-    const court = await Court.findById(id).populate('reviews').populate('author');
-    console.log(court)
+    // const court = await Court.findById(id).populate('reviews').populate('author');
+    const court = await Court.findById(id).populate({
+        path:'reviews',
+        populate:{
+            path:'author'
+        }
+    }).populate('author');
+    // console.log(court)
     if(!court){
         req.flash('error','Cannot find that court!');
         return res.redirect('/courts');
