@@ -5,7 +5,13 @@ const ExpressError = require('../utils/ExpressError');
 const catchAsync = require('../utils/catchAsync');
 const {courtSchema} = require('../JoicourtSchema');
 const {isLoggedIn, isAuthor, validateCourt} = require('../middleware');
-
+const multer  = require('multer');
+const { storage, cloudinary } = require('../cloudinary');
+// const upload = multer({ dest: 'uploads/' });
+const upload = multer({ storage });
+const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
+const mapBoxToken = process.env.MAPBOX_TOKEN;
+const geocoder = mbxGeocoding({accessToken:mapBoxToken});
 
 
 router.get('/', async (req,res)=>{
@@ -15,13 +21,26 @@ router.get('/', async (req,res)=>{
 router.get('/new', isLoggedIn, (req,res)=>{  //order matters, need to before :id
     res.render('courts/new');
 })
-router.post('/', isLoggedIn, validateCourt, catchAsync(async(req,res)=>{
+router.post('/', isLoggedIn, upload.array('image'), validateCourt, catchAsync(async(req,res)=>{
+    const geoData = await geocoder.forwardGeocode({
+        query:req.body.court.location,
+        limit:1
+    }).send()
     const court = new Court(req.body.court);
+    court.geometry = geoData.body.features[0].geometry;
+    court.images = req.files.map(f=>({url:f.path, filename:f.filename}));
     court.author = req.user._id;
     await court.save();
+    // console.log(court);
     req.flash('success','Successfully made a new court.')
     res.redirect(`/courts/${court._id}`);
 }))
+
+// router.post('/',upload.array('image'), (req,res)=>{
+//     console.log(req.body, req.files)
+//     res.send('It worked!')
+// })
+
 router.get('/:id', catchAsync(async (req,res)=>{
     const {id} =req.params;
     // const court = await Court.findById(id).populate('reviews').populate('author');
@@ -43,10 +62,19 @@ router.get('/:id/edit', isLoggedIn, isAuthor, catchAsync(async(req,res)=>{
     const court = await Court.findById(id);
     res.render('courts/edit',{court});
 }))
-router.put('/:id', isLoggedIn, isAuthor, validateCourt, catchAsync(async(req,res)=>{
+router.put('/:id', isLoggedIn, isAuthor, upload.array('image'), validateCourt, catchAsync(async(req,res)=>{
     const {id} = req.params;
     const court = await Court.findByIdAndUpdate(id,{...req.body.court});
-    console.log(req.body)
+    const imgs = req.files.map(f=>({url:f.path, filename:f.filename}));
+    court.images.push(...imgs);
+    // console.log(req.body)
+    await court.save();
+    if(req.body.deleteImages){
+        for(let filename of req.body.deleteImages){
+            await cloudinary.uploader.destroy(filename);
+        }
+        await court.updateOne({$pull:{images:{filename:{$in:req.body.deleteImages}}}})
+    }
     req.flash('success','Successfully updated the court.')
     res.redirect(`/courts/${court._id}`);
 }))

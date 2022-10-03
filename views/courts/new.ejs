@@ -4,7 +4,7 @@
 <div class="row">
     <h1 class="text-center">Add A New Court</h1>
     <div class="col-6 offset-3">
-        <form action="/courts" method="POST" class="validated-form" novalidate>
+        <form action="/courts" method="POST" class="validated-form" novalidate enctype="multipart/form-data">
             <div class="mb-3">
                 <label class="form-label" for="title">Title:</label>
                 <input class="form-control" type="text" id="title" name="court[title]" required>
@@ -36,13 +36,18 @@
                   </div>
             </div>
             <div class="mb-3">
-                <label class="form-label" for="image">Image Url:</label>
+                <!-- <label class="form-label" for="image">Image Url:</label>
                 <input class="form-control" type="text" id="image" name="court[image]" required>
                 <div class="valid-feedback">
                     Looks good!
                   </div>
                   <div class="invalid-feedback">
                     Please provide an image url.
+                  </div> -->
+                  <!-- <input type="file" name="image" id="" multiple> -->
+                  <div class="input-group mb-3">
+                    <input type="file" class="form-control" id="image" name="image" multiple>
+                    <label class="input-group-text" for="image">Upload images</label>
                   </div>
             </div>
             <div class="mb-3">
